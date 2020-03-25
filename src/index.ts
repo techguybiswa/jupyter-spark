@@ -28,11 +28,13 @@ function activate(
   const sparkContainer = document.createElement("div");
   sparkContainer.style.textAlign = "center";
   sparkContainer.style.height = "70vh";
-  let fetchDataOfPySparkFromDropdown =  (event: Event) => {
+  let fetchDataOfPySparkFromDropdown = (event: Event) => {
     console.log((<HTMLInputElement>event.target).value);
-    (document.getElementById("portnumber") as HTMLInputElement).value = (<HTMLInputElement>event.target).value;
-    fetchDataOfPySpark()
-  }
+    (document.getElementById("portnumber") as HTMLInputElement).value = (<
+      HTMLInputElement
+    >event.target).value;
+    fetchDataOfPySpark();
+  };
   let fetchDataOfPySpark = async () => {
     let portNumber = (document.getElementById("portnumber") as HTMLInputElement)
       .value;
@@ -117,44 +119,45 @@ function activate(
         listOfAllPorts = [...listOfAllPorts, initialPort];
       }
       fetchListOfAllPorts(initialPort + 1);
+      //recursively call the function fetchListOfAllPorts() to check which all ports are active
+      // the end condition of the recursion is when the port is not available 
     } catch (err) {
-      (document.getElementById('selectPort') as HTMLFormElement).innerHTML = "";
-
+      (document.getElementById("selectPort") as HTMLFormElement).innerHTML = "";
       (document.getElementById("getPorts") as HTMLFormElement).disabled = false;
       document.getElementById("getPorts").innerHTML = `Fetch all active ports`;
-      let selectElement = document.getElementById('selectPort') as HTMLFormElement
+
+      let selectElement = document.getElementById(
+        "selectPort"
+      ) as HTMLFormElement;
       listOfAllPorts.map(eachPort => {
         selectElement.add(new Option(`Port ${eachPort}`, eachPort));
       });
+      
       listOfAllPorts = [];
-      console.log(listOfAllPorts)
+      console.log(listOfAllPorts);
     }
   };
   /* Create input field */
   const submitButton = document.createElement("button");
   submitButton.id = "submitBtn";
   submitButton.value = "4040";
-
   submitButton.innerHTML = "FETCH";
   submitButton.onclick = () => fetchDataOfPySpark();
 
   const getPortsButton = document.createElement("button");
   getPortsButton.id = "getPorts";
-
   getPortsButton.innerHTML = "Fetch all active ports";
   getPortsButton.onclick = () => fetchListOfAllPorts(4040);
 
   const portInput = document.createElement("div");
-
   portInput.innerHTML = `<div class="wrapper">
       <p>Show details of port</p>
       <input class="input" id="portnumber" placeholder="4040" type="text" value="4040">
     </div>`;
 
-
-  const select = document.createElement( 'select' );
-  select.id = "selectPort"
-  select.onchange = () => fetchDataOfPySparkFromDropdown(event)
+  const select = document.createElement("select");
+  select.id = "selectPort";
+  select.onchange = () => fetchDataOfPySparkFromDropdown(event);
 
   const applicationResponse = document.createElement("div");
   applicationResponse.setAttribute("id", "applicationRes");
@@ -169,11 +172,9 @@ function activate(
   sparkWidget.node.appendChild(getPortsButton);
   sparkWidget.node.appendChild(select);
 
-
   sparkWidget.node.appendChild(applicationResponse);
   sparkWidget.node.appendChild(executorsResponse);
   sparkWidget.node.appendChild(environmentResponse);
-
   sparkWidget.node.appendChild(sparkContainer);
 
   /* Add an application command */
