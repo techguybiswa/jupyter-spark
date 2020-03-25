@@ -1,153 +1,143 @@
 import {
-  ILayoutRestorer, JupyterFrontEnd, JupyterFrontEndPlugin
-} from '@jupyterlab/application';
+  JupyterFrontEndPlugin,
+  JupyterFrontEnd
+} from "@jupyterlab/application";
+import { ICommandPalette, MainAreaWidget } from "@jupyterlab/apputils";
 
-import {
-  ICommandPalette, MainAreaWidget, WidgetTracker
-} from '@jupyterlab/apputils';
+import { Widget } from "@lumino/widgets";
 
-import {
-  Message
-} from '@lumino/messaging';
+import "../style/index.css";
 
-import {
-  Widget
-} from '@lumino/widgets';
+function activate(
+  this: JupyterFrontEndPlugin<void>,
+  app: JupyterFrontEnd,
+  palette: ICommandPalette
+): void {
+  console.log("In activate");
 
-interface APODResponse {
-  copyright: string;
-  date: string;
-  explanation: string;
-  media_type: 'video' | 'image';
-  title: string;
-  url: string;
-};
-class APODWidget extends Widget {
-  /**
-  * Construct a new APOD widget.
-  */
-  constructor() {
-    super();
+  /* Create main view components */
+  const sparkWidget = new Widget();
+  sparkWidget.title.label = "Open Spark UI";
+  const widget = new MainAreaWidget({ content: sparkWidget });
+  widget.id = "spark-ui";
+  widget.title.label = "Spark UI";
+  widget.title.closable = true;
+  const heading = document.createElement("h1");
+  heading.innerHTML = "Access the Spark UI";
+  heading.style.marginLeft = "5%";
+  const sparkContainer = document.createElement("div");
+  sparkContainer.style.textAlign = "center";
+  sparkContainer.style.height = "70vh";
 
-    this.addClass('my-apodWidget');
+  let fetchDataofPySpark = async () => {
+    let portNumber = (document.getElementById("portnumber") as HTMLInputElement)
+      .value;
 
-    // Add an image element to the panel
-    this.img = document.createElement('img');
-    this.node.appendChild(this.img);
+    try {
+      document.getElementById("applicationRes").innerHTML = `<p>Loading application data...</p>`
+      document.getElementById("executorRes").innerHTML = `<p>Loading executors data...</p>`
+      document.getElementById("environmentRes").innerHTML = `<p>Loading environment data...</p>`
 
-    // Add a summary element to the panel
-    this.summary = document.createElement('p');
-    this.node.appendChild(this.summary);
-  }
+      let applicationResponse = await fetch(`http://localhost:${portNumber}/api/v1/applications/`);
+      let applicationResult = await applicationResponse.json();
+      console.log("result is " , applicationResult)
+      document.getElementById("applicationRes").innerHTML = `
+      <p>Applications Detail</p>
+      <p>Number of applications running : ${applicationResult.length}</p>
+        <ul>
+        <li>App Id: ${applicationResult[0].id}</li>
+        <li>App Name: ${applicationResult[0].name}</li>
+        </ul>
+      `
+      let appId = applicationResult[0].id
+      let executorsResponse = await fetch(`http://localhost:${portNumber}/api/v1/applications/${appId}/executors`)
+      let executors = await executorsResponse.json();
+      console.log("executors" , executors)
+      document.getElementById("executorRes").innerHTML = `
+      <p>Executors Detail</p>
+      <ul>
+      <li>Executor Id: ${executors[0].id}</li>
+      <li>Host Port: ${executors[0].hostPort}</li>
+      <li>Add Time: ${executors[0].addTime}</li>
+      <li>Max Memory: ${executors[0].maxMemory}</li>
+      </ul>
+    `
+      let environmentResponse =  await fetch(`http://localhost:${portNumber}/api/v1/applications/${appId}/environment`)
+      let environment = await environmentResponse.json();
+      console.log("environment" , environment)
+      document.getElementById("environmentRes").innerHTML = `
+      <p>Environment Detail</p>
 
-  /**
-  * The image element associated with the widget.
-  */
-  readonly img: HTMLImageElement;
-
-  /**
-  * The summary text element associated with the widget.
-  */
-  readonly summary: HTMLParagraphElement;
-
-  /**
-  * Handle update requests for the widget.
-  */
-  async onUpdateRequest(msg: Message): Promise<void> {
-
-    const response = await fetch(`https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&date=${this.randomDate()}`);
-
-    if (!response.ok) {
-      const data = await response.json();
-      if (data.error) {
-        this.summary.innerText = data.error.message;
-      } else {
-        this.summary.innerText = response.statusText;
-      }
-      return;
+      <ul>
+      <li>Java verion : ${environment.runtime.javaVersion}</li>
+      <li>Java Home: ${environment.runtime.javaHome}</li>
+      <li>Scala Version: ${environment.runtime.scalaVersion}</li>
+      </ul>
+    `
+    } catch (err) {
+      console.log(err)
     }
+  };
+  /* Create input field */
+  const submitButton = document.createElement("button");
+  submitButton.id = "submitBtn";
+  submitButton.value = "4040";
 
-    const data = await response.json() as APODResponse;
+  submitButton.innerHTML = "FETCH HUH";
+  submitButton.onclick = () => fetchDataofPySpark();
 
-    if (data.media_type === 'image') {
-      // Populate the image
-      this.img.src = data.url;
-      this.img.title = data.title;
-      this.summary.innerText = data.title;
-      if (data.copyright) {
-        this.summary.innerText += ` (Copyright ${data.copyright})`;
-      }
-    } else {
-      this.summary.innerText = 'Random APOD fetched was not an image.';
-    }
-  }
+  const portInput = document.createElement("div");
 
-  /**
-  * Get a random date string in YYYY-MM-DD format.
-  */
-  randomDate(): string {
-    const start = new Date(2010, 1, 1);
-    const end = new Date();
-    const randomDate = new Date(start.getTime() + Math.random()*(end.getTime() - start.getTime()));
-    return randomDate.toISOString().slice(0, 10);
-  }
-}
-/**
-* Activate the APOD widget extension.
-*/
-let activate = (app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer) => {
-  console.log('JupyterLab extension jupyterlab_apod is activated!');
+  portInput.innerHTML = `<div class="wrapper">
+      <span>Get Spark UI (typically at port numbers at and after 4040)</span>
+      <input class="input" id="portnumber" placeholder="4040" type="text" value="4040">
+    </div>`;
 
-  // Declare a widget variable
-  let widget: MainAreaWidget<APODWidget>;
+  const applicationResponse = document.createElement("div");
+  applicationResponse.setAttribute("id", "applicationRes");
+  const executorsResponse = document.createElement("div");
+  executorsResponse.setAttribute("id", "executorRes");
+  const environmentResponse = document.createElement("div");
+  environmentResponse.setAttribute("id", "environmentRes");
 
-  // Add an application command
-  const command: string = 'apod:open';
+  sparkWidget.node.appendChild(heading);
+  sparkWidget.node.appendChild(portInput);
+  sparkWidget.node.appendChild(submitButton);
+  sparkWidget.node.appendChild(applicationResponse);
+  sparkWidget.node.appendChild(executorsResponse);
+  sparkWidget.node.appendChild(environmentResponse);
+
+
+  sparkWidget.node.appendChild(sparkContainer);
+
+
+  /* Add an application command */
+  const command: string = "spark:open";
   app.commands.addCommand(command, {
-    label: 'Random Astronomy Picture',
+    label: "Spark UI",
     execute: () => {
-      if (!widget) {
-        // Create a new widget if one does not exist
-        const content = new APODWidget();
-        widget = new MainAreaWidget({content});
-        widget.id = 'apod-jupyterlab';
-        widget.title.label = 'Astronomy Picture';
-        widget.title.closable = true;
-      }
-      if (!tracker.has(widget)) {
-        // Track the state of the widget for later restoration
-        tracker.add(widget);
-      }
       if (!widget.isAttached) {
         // Attach the widget to the main work area if it's not there
-        app.shell.add(widget, 'main');
+        app.shell.add(widget, "main");
       }
-      widget.content.update();
-
+      // Refresh the picture in the widget
+      sparkWidget.update();
       // Activate the widget
       app.shell.activateById(widget.id);
     }
   });
 
-  // Add the command to the palette.
-  palette.addItem({ command, category: 'Tutorial' });
-
-  // Track and restore the widget state
-  let tracker = new WidgetTracker<MainAreaWidget<APODWidget>>({
-    namespace: 'apod'
-  });
-  restorer.restore(tracker, {
-    command,
-    name: () => 'apod'
-  });
+  /* Add the command to the palette. */
+  palette.addItem({ command, category: "Spark" });
 }
+
 /**
- * Initialization data for the bisso extension.
+ * Initialization data for the spark_ui_tab extension.
  */
 const extension: JupyterFrontEndPlugin<void> = {
-  id: "bisso",
+  id: "spark_ui",
   autoStart: true,
-  requires: [ICommandPalette,ILayoutRestorer],
+  requires: [ICommandPalette],
   activate: activate
 };
 
