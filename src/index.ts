@@ -23,24 +23,36 @@ function activate(
   widget.title.label = "Spark UI";
   widget.title.closable = true;
   const heading = document.createElement("h1");
-  heading.innerHTML = "SPARK UI via API";
+  heading.innerHTML = "Spark Interface by @techguybiswa";
   heading.style.marginLeft = "5%";
   const sparkContainer = document.createElement("div");
   sparkContainer.style.textAlign = "center";
   sparkContainer.style.height = "70vh";
-
-  let fetchDataofPySpark = async () => {
+  let fetchDataOfPySparkFromDropdown =  (event: Event) => {
+    console.log((<HTMLInputElement>event.target).value);
+    (document.getElementById("portnumber") as HTMLInputElement).value = (<HTMLInputElement>event.target).value;
+    fetchDataOfPySpark()
+  }
+  let fetchDataOfPySpark = async () => {
     let portNumber = (document.getElementById("portnumber") as HTMLInputElement)
       .value;
 
     try {
-      document.getElementById("applicationRes").innerHTML = `<p>Loading application data...</p>`
-      document.getElementById("executorRes").innerHTML = `<p>Loading executors data...</p>`
-      document.getElementById("environmentRes").innerHTML = `<p>Loading environment data...</p>`
+      document.getElementById(
+        "applicationRes"
+      ).innerHTML = `<p>Loading application data...</p>`;
+      document.getElementById(
+        "executorRes"
+      ).innerHTML = `<p>Loading executors data...</p>`;
+      document.getElementById(
+        "environmentRes"
+      ).innerHTML = `<p>Loading environment data...</p>`;
 
-      let applicationResponse = await fetch(`http://localhost:${portNumber}/api/v1/applications/`);
+      let applicationResponse = await fetch(
+        `http://localhost:${portNumber}/api/v1/applications/`
+      );
       let applicationResult = await applicationResponse.json();
-      console.log("result is " , applicationResult)
+      console.log("result is ", applicationResult);
       document.getElementById("applicationRes").innerHTML = `
       <p>Applications Detail</p>
       <p>Number of applications running : ${applicationResult.length}</p>
@@ -48,11 +60,13 @@ function activate(
         <li>App Id: ${applicationResult[0].id}</li>
         <li>App Name: ${applicationResult[0].name}</li>
         </ul>
-      `
-      let appId = applicationResult[0].id
-      let executorsResponse = await fetch(`http://localhost:${portNumber}/api/v1/applications/${appId}/executors`)
+      `;
+      let appId = applicationResult[0].id;
+      let executorsResponse = await fetch(
+        `http://localhost:${portNumber}/api/v1/applications/${appId}/executors`
+      );
       let executors = await executorsResponse.json();
-      console.log("executors" , executors)
+      console.log("executors", executors);
       document.getElementById("executorRes").innerHTML = `
       <p>Executors Detail</p>
       <ul>
@@ -61,10 +75,12 @@ function activate(
       <li>Add Time: ${executors[0].addTime}</li>
       <li>Max Memory: ${executors[0].maxMemory}</li>
       </ul>
-    `
-      let environmentResponse =  await fetch(`http://localhost:${portNumber}/api/v1/applications/${appId}/environment`)
+    `;
+      let environmentResponse = await fetch(
+        `http://localhost:${portNumber}/api/v1/applications/${appId}/environment`
+      );
       let environment = await environmentResponse.json();
-      console.log("environment" , environment)
+      console.log("environment", environment);
       document.getElementById("environmentRes").innerHTML = `
       <p>Environment Detail</p>
 
@@ -73,39 +89,54 @@ function activate(
       <li>Java Home: ${environment.runtime.javaHome}</li>
       <li>Scala Version: ${environment.runtime.scalaVersion}</li>
       </ul>
-    `
+    `;
     } catch (err) {
-      document.getElementById("applicationRes").innerHTML = `<p>Error while loading application data.</p>`
-      document.getElementById("executorRes").innerHTML = `<p>Error while loading executors data.</p>`
-      document.getElementById("environmentRes").innerHTML = `<p>Error while loading environment data.</p>`
-      console.log("There was an error")
+      document.getElementById(
+        "applicationRes"
+      ).innerHTML = `<p>Error while loading application data.</p>`;
+      document.getElementById(
+        "executorRes"
+      ).innerHTML = `<p>Error while loading executors data.</p>`;
+      document.getElementById(
+        "environmentRes"
+      ).innerHTML = `<p>Error while loading environment data.</p>`;
+      console.log("There was an error");
     }
   };
   let listOfAllPorts: any[] = [];
   let fetchListOfAllPorts = async (initialPort: any) => {
     try {
-      let apiRes = await fetch(`http://localhost:${initialPort}/api/v1/applications/`);
-      if (apiRes){
-        listOfAllPorts = [...listOfAllPorts , initialPort]
+      (document.getElementById("getPorts") as HTMLFormElement).disabled = true;
+      document.getElementById(
+        "getPorts"
+      ).innerHTML = `Fetching all active ports...`;
+      let apiRes = await fetch(
+        `http://localhost:${initialPort}/api/v1/applications/`
+      );
+      if (apiRes) {
+        listOfAllPorts = [...listOfAllPorts, initialPort];
       }
-      fetchListOfAllPorts(initialPort+1)
+      fetchListOfAllPorts(initialPort + 1);
     } catch (err) {
-      listOfAllPorts.map(eachItem => {
-        console.log(eachItem)
-      })
-      listOfAllPorts = []
+      (document.getElementById('selectPort') as HTMLFormElement).innerHTML = "";
+
+      (document.getElementById("getPorts") as HTMLFormElement).disabled = false;
+      document.getElementById("getPorts").innerHTML = `Fetch all active ports`;
+      let selectElement = document.getElementById('selectPort') as HTMLFormElement
+      listOfAllPorts.map(eachPort => {
+        selectElement.add(new Option(`Port ${eachPort}`, eachPort));
+      });
+      listOfAllPorts = [];
+      console.log(listOfAllPorts)
     }
-
-
-  }
+  };
   /* Create input field */
   const submitButton = document.createElement("button");
   submitButton.id = "submitBtn";
   submitButton.value = "4040";
 
   submitButton.innerHTML = "FETCH";
-  submitButton.onclick = () => fetchDataofPySpark();
-
+  submitButton.onclick = () => fetchDataOfPySpark();
 
   const getPortsButton = document.createElement("button");
   getPortsButton.id = "getPorts";
@@ -113,13 +144,17 @@ function activate(
   getPortsButton.innerHTML = "Fetch all active ports";
   getPortsButton.onclick = () => fetchListOfAllPorts(4040);
 
-
   const portInput = document.createElement("div");
 
   portInput.innerHTML = `<div class="wrapper">
-      <p>Enter port number</p>
+      <p>Show details of port</p>
       <input class="input" id="portnumber" placeholder="4040" type="text" value="4040">
     </div>`;
+
+
+  const select = document.createElement( 'select' );
+  select.id = "selectPort"
+  select.onchange = () => fetchDataOfPySparkFromDropdown(event)
 
   const applicationResponse = document.createElement("div");
   applicationResponse.setAttribute("id", "applicationRes");
@@ -132,14 +167,14 @@ function activate(
   sparkWidget.node.appendChild(portInput);
   sparkWidget.node.appendChild(submitButton);
   sparkWidget.node.appendChild(getPortsButton);
+  sparkWidget.node.appendChild(select);
+
 
   sparkWidget.node.appendChild(applicationResponse);
   sparkWidget.node.appendChild(executorsResponse);
   sparkWidget.node.appendChild(environmentResponse);
 
-
   sparkWidget.node.appendChild(sparkContainer);
-
 
   /* Add an application command */
   const command: string = "spark:open";
