@@ -1,9 +1,12 @@
-# bisso
+# Spark UI by @techguybiswa
 
 ![Github Actions Status](jupyter/workflows/Build/badge.svg)
 
 playing around with jupyter
 
+## IMP NOTE: 
+
+After you start multiple spark clusters on localhost:4040, 4041 and so on , make sure to  install <a href="https://chrome.google.com/webstore/detail/moesif-orign-cors-changer/digfbfaphojjndkpccljibejjbppifbc"> Moesif CORS </a> so as to disable CORS. Or else none of the APIs that connect the extension with the spark UI  will work.
 
 ## Requirements
 
