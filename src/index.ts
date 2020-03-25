@@ -23,7 +23,7 @@ function activate(
   widget.title.label = "Spark UI";
   widget.title.closable = true;
   const heading = document.createElement("h1");
-  heading.innerHTML = "Access the Spark UI";
+  heading.innerHTML = "SPARK UI via API";
   heading.style.marginLeft = "5%";
   const sparkContainer = document.createElement("div");
   sparkContainer.style.textAlign = "center";
@@ -75,21 +75,49 @@ function activate(
       </ul>
     `
     } catch (err) {
-      console.log(err)
+      document.getElementById("applicationRes").innerHTML = `<p>Error while loading application data.</p>`
+      document.getElementById("executorRes").innerHTML = `<p>Error while loading executors data.</p>`
+      document.getElementById("environmentRes").innerHTML = `<p>Error while loading environment data.</p>`
+      console.log("There was an error")
     }
   };
+  let listOfAllPorts: any[] = [];
+  let fetchListOfAllPorts = async (initialPort: any) => {
+    try {
+      let apiRes = await fetch(`http://localhost:${initialPort}/api/v1/applications/`);
+      if (apiRes){
+        listOfAllPorts = [...listOfAllPorts , initialPort]
+      }
+      fetchListOfAllPorts(initialPort+1)
+    } catch (err) {
+      listOfAllPorts.map(eachItem => {
+        console.log(eachItem)
+      })
+      listOfAllPorts = []
+    }
+
+
+  }
   /* Create input field */
   const submitButton = document.createElement("button");
   submitButton.id = "submitBtn";
   submitButton.value = "4040";
 
-  submitButton.innerHTML = "FETCH HUH";
+  submitButton.innerHTML = "FETCH";
   submitButton.onclick = () => fetchDataofPySpark();
+
+
+  const getPortsButton = document.createElement("button");
+  getPortsButton.id = "getPorts";
+
+  getPortsButton.innerHTML = "Fetch all active ports";
+  getPortsButton.onclick = () => fetchListOfAllPorts(4040);
+
 
   const portInput = document.createElement("div");
 
   portInput.innerHTML = `<div class="wrapper">
-      <span>Get Spark UI (typically at port numbers at and after 4040)</span>
+      <p>Enter port number</p>
       <input class="input" id="portnumber" placeholder="4040" type="text" value="4040">
     </div>`;
 
@@ -103,6 +131,8 @@ function activate(
   sparkWidget.node.appendChild(heading);
   sparkWidget.node.appendChild(portInput);
   sparkWidget.node.appendChild(submitButton);
+  sparkWidget.node.appendChild(getPortsButton);
+
   sparkWidget.node.appendChild(applicationResponse);
   sparkWidget.node.appendChild(executorsResponse);
   sparkWidget.node.appendChild(environmentResponse);
